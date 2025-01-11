@@ -3,10 +3,8 @@ from vosk import Model, KaldiRecognizer
 import json
 import os
 
-class SpeechRecognitionService(rpyc.Service):
 
-    def __init__(self):
-        self.recognizer = None
+class SpeechRecognitionService(rpyc.Service):
 
     def on_connect(self, conn):
         print("Client connected.")
@@ -30,16 +28,19 @@ class SpeechRecognitionService(rpyc.Service):
             json_str = self.recognizer.FinalResult()
             json_text = json.loads(json_str)
             text = json_text.get("text")
-            return text
-        return ""
+        else:
+            json_str = self.recognizer.PartialResult()
+            json_text = json.loads(json_str)
+            text = json_text.get("partial")
+
+        return text
 
 
 if __name__ == "__main__":
     from rpyc.utils.authenticators import SSLAuthenticator
     from rpyc.utils.server import ThreadedServer
 
-    port=os.environ.get('PORT', 18861)
-
+    port = os.environ.get('PORT', 18861)
     authenticator = SSLAuthenticator("ssl/server.key", "ssl/server.cert")
     server = ThreadedServer(SpeechRecognitionService, port=port, authenticator=authenticator)
     server.start()

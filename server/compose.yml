@@ -1,5 +1,6 @@
 services:
-  vosk-server:
+  server:
+    image: vosk-rpyc.latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -10,3 +11,4 @@ services:
       - 18861:18861
     env_file:
       - ./.env
+
