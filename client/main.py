@@ -1,8 +1,10 @@
-# Cliente (client.py)
 import rpyc
 import pyaudio
 
-conn = rpyc.connect("localhost", 18861)
+conn = rpyc.ssl_connect("localhost",
+                        18861,
+                        keyfile="ssl/client.key",
+                        certfile="ssl/client.cert")
 
 CHUNK = 2048
 FORMAT = pyaudio.paInt16
@@ -22,19 +24,8 @@ stream = p.open(format=FORMAT,
 def record_and_transcribe():
     data = stream.read(CHUNK, exception_on_overflow=False)
     text = conn.root.exposed_transcribe_audio(data)
-    print("Transcripción:", text)
-
-    # print("Grabando...")
-    # frames = []
-    # for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
-    #     data = stream.read(CHUNK)
-    #     frames.append(data)
-    # print("Grabación finalizada.")
-    #
-    # audio_data = b''.join(frames)
-    # text = conn.root.transcribe_audio(audio_data)
-    # print("Transcripción:", text)
-
+    if text:
+        print("Transcripción:", text)
 
 while True:
     record_and_transcribe()

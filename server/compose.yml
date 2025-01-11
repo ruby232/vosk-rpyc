@@ -1,0 +1,12 @@
+services:
+  vosk-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./models/current-model:/var/vosk-model
+      - ./:/app
+    ports:
+      - 18861:18861
+    env_file:
+      - ./.env

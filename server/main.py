@@ -1,45 +1,45 @@
 import rpyc
 from vosk import Model, KaldiRecognizer
 import json
+import os
 
 class SpeechRecognitionService(rpyc.Service):
 
-    def on_connect(self, conn):
-        print("Cliente conectado")
-        sample_rate=16000
-        model_dir = "/home/natsu/.config/nono/models/vosk-model-small-es-0.42/"
-        grammar = ["[unk]", "luces", "apagar", "encender"]
-        model = Model(model_dir)
+    def __init__(self):
+        self.recognizer = None
 
+    def on_connect(self, conn):
+        print("Client connected.")
+
+        sample_rate = int(os.environ.get('SAMPLE_RATE', 16000))
+        model_dir = os.environ.get('MODEL_DIR', '/var/vosk-model')
+        env_grammar = os.environ.get('GRAMMAR', '')
+
+        grammar = ["[unk]"]
+        grammar.extend(env_grammar.split(','))
         grammar_str = json.dumps(grammar)
+
+        model = Model(model_dir)
         self.recognizer = KaldiRecognizer(model, sample_rate, grammar_str)
 
     def on_disconnect(self, conn):
-        print("Cliente desconectado")
+        print("Client disconnected.")
 
     def exposed_transcribe_audio(self, audio_data):
-        print("LLEGO")
         if self.recognizer.AcceptWaveform(audio_data):
             json_str = self.recognizer.FinalResult()
             json_text = json.loads(json_str)
             text = json_text.get("text")
             return text
-        return "NO-ACCEPT"
+        return ""
 
-        # if self.recognizer.AcceptWaveform(audio_data):
-        #     result = json.loads(self.recognizer.Result())
-        #     print("Rewsultado")
-        #     print(result)
-        #     if 'text' in result:
-        #         return result['text']
-        # else:
-        #     print("Parcial")
-        #     partial_result = json.loads(self.recognizer.PartialResult())
-        #     if 'partial' in partial_result:
-        #         return partial_result['partial']
-        # print("Sin resultado")
 
 if __name__ == "__main__":
+    from rpyc.utils.authenticators import SSLAuthenticator
     from rpyc.utils.server import ThreadedServer
-    server = ThreadedServer(SpeechRecognitionService, port=18861)
+
+    port=os.environ.get('PORT', 18861)
+
+    authenticator = SSLAuthenticator("ssl/server.key", "ssl/server.cert")
+    server = ThreadedServer(SpeechRecognitionService, port=port, authenticator=authenticator)
     server.start()

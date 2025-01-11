@@ -1,2 +1,6 @@
 venv
 .idea
+server/models
+server/ssl
+server/.env
+client/ssl
